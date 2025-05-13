@@ -67,7 +67,6 @@ def extract_confirmation(text):
     return None
 
 def parse_mcqs(questions_text):
-    """Parse the MCQ questions from the text"""
     questions = []
     current_question = None
     options = []
@@ -78,37 +77,31 @@ def parse_mcqs(questions_text):
         if not line:
             continue
             
-        # New question starts with a number or "Question" prefix
         if re.match(r'^\d+\.|\bQ(uestion)?\s*\d+[\.\:]|^\[\d+\]', line):
-            # Save previous question if exists
             if current_question and options:
                 questions.append({
                     'question': current_question,
                     'options': options.copy(),
-                    'correct_answer': None  # Will be set randomly or parsed later
+                    'correct_answer': None
                 })
                 
-            # Extract the new question
             current_question = re.sub(r'^\d+\.|\bQ(uestion)?\s*\d+[\.\:]|^\[\d+\]', '', line).strip()
             options = []
         
-        # Option line
         elif re.match(r'^[A-D][\)\.]|^- [A-D][\)\.]', line):
             option_text = re.sub(r'^[A-D][\)\.]\s*|- [A-D][\)\.]\s*', '', line).strip()
             options.append(option_text)
     
-    # Add the final question
     if current_question and options:
         questions.append({
             'question': current_question,
             'options': options.copy(),
-            'correct_answer': None  # Will be set randomly or parsed later
+            'correct_answer': None
         })
     
     return questions
 
 def extract_mcq_answer(text):
-    """Extract option selection (A, B, C, D) from user input"""
     pattern = r'\b([A-Da-d])\b'
     match = re.search(pattern, text)
     if match:
@@ -169,10 +162,8 @@ def generate_response(user_input):
             st.session_state.collected_info["position"] = position
             questions_text = generate_tech_questions(position)
             
-            # Parse the MCQs
             st.session_state.mcq_questions = parse_mcqs(questions_text)
             
-            # Fallback questions if parsing fails or no questions generated
             if not st.session_state.mcq_questions:
                 st.session_state.mcq_questions = [
                     {
@@ -227,11 +218,9 @@ def generate_response(user_input):
                     }
                 ]
             
-            # Limit to max 15 questions
             if len(st.session_state.mcq_questions) > 15:
                 st.session_state.mcq_questions = st.session_state.mcq_questions[:15]
                 
-            # Set correct answers (in a real application, these would come from the API)
             import random
             for q in st.session_state.mcq_questions:
                 q['correct_answer'] = random.choice(['A', 'B', 'C', 'D'])
@@ -285,7 +274,6 @@ def generate_response(user_input):
                     
                     return f"Thank you!\n\nQuestion {st.session_state.current_question_index + 1}: {next_q['question']}{options_text}\n\nPlease select A, B, C, or D."
                 else:
-                    # Calculate score
                     correct_answers = sum(1 for ans in st.session_state.user_answers if ans['correct'])
                     percentage = (correct_answers / st.session_state.max_possible_score) * 100
                     st.session_state.final_percentage = round(percentage, 1)
@@ -618,7 +606,7 @@ def main():
                 progress = st.session_state.current_question_index / len(st.session_state.mcq_questions)
                 st.progress(progress, text=f"Question {st.session_state.current_question_index}/{len(st.session_state.mcq_questions)}")
         
-        if st.session_state.assessment_complete:
+        if st.session_state.assessment_complete and hasattr(st.session_state, 'final_percentage'):
             st.subheader(f"Final Score: {st.session_state.final_percentage}%")
             passed = st.session_state.final_percentage >= 60
             result_text = "PASSED" if passed else "FAILED"
@@ -650,31 +638,34 @@ def main():
         
         st.markdown("<div class='reset-button-container'></div>", unsafe_allow_html=True)
         
-        with st.form(key='reset_form'):
-            reset_submitted = st.form_submit_button("Reset Conversation")
-            if reset_submitted:
-                st.session_state.messages = []
-                st.session_state.collected_info = {k: None for k in st.session_state.collected_info}
-                st.session_state.conversation_started = False
-                st.session_state.test_confirmed = False
-                st.session_state.assessment_complete = False
-                st.session_state.final_percentage = 0
-                if hasattr(st.session_state, 'user_answers'):
-                    del st.session_state.user_answers
-                if hasattr(st.session_state, 'mcq_questions'):
-                    del st.session_state.mcq_questions
-                if hasattr(st.session_state, 'current_question_index'):
-                    del st.session_state.current_question_index
-                st.session_state.reset_requested = True
-    
+        if st.button("Reset Conversation", key="reset_button"):
+            st.session_state.messages = [{"role": "assistant", "content": "Hello! Welcome to TalentScout. Please say 'hi' to start the conversation."}]
+            st.session_state.collected_info = {
+                "name": None,
+                "email": None,
+                "phone": None,
+                "position": None,
+                "experience": None,
+                "location": None
+            }
+            st.session_state.conversation_started = False
+            st.session_state.test_confirmed = False
+            st.session_state.assessment_complete = False
+            st.session_state.final_percentage = 0
+            
+            if 'mcq_questions' in st.session_state:
+                del st.session_state.mcq_questions
+            if 'current_question_index' in st.session_state:
+                del st.session_state.current_question_index
+            if 'user_answers' in st.session_state:
+                del st.session_state.user_answers
+            if 'max_possible_score' in st.session_state:
+                del st.session_state.max_possible_score
+            
+            st.rerun()
+
     if st.session_state.assessment_complete and st.session_state.final_percentage >= 60:
         display_score_animation()
-    
-    if st.session_state.get('reset_requested', False):
-        greeting = "Hello! Welcome to TalentScout. Please say 'hi' to start the conversation."
-        st.session_state.messages.append({"role": "assistant", "content": greeting})
-        st.session_state.reset_requested = False
-        st.rerun()
     
     chat_container = st.container()
     with chat_container:
