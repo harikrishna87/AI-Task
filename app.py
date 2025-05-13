@@ -572,6 +572,14 @@ def main():
     st.set_page_config(page_title="TalentScout Hiring Assistant", page_icon="🤖")
     set_custom_css()
     
+    st.markdown("""
+    <style>
+        div[data-testid="stSidebarUserContent"] button[kind="secondary"] {
+            display: none !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+    
     st.title("TalentScout Hiring Assistant")
     
     if "messages" not in st.session_state:
@@ -635,34 +643,6 @@ def main():
                         question = st.session_state.mcq_questions[q_index]['question']
                         result = "✅ Correct" if answer_data['correct'] else "❌ Incorrect"
                         st.write(f"**Q{q_index+1}:** {question[:40]}... - **Your answer:** {answer_data['user_answer']} - {result}")
-        
-        st.markdown("<div class='reset-button-container'></div>", unsafe_allow_html=True)
-        
-        if st.button("Reset Conversation", key="reset_button"):
-            st.session_state.messages = [{"role": "assistant", "content": "Hello! Welcome to TalentScout. Please say 'hi' to start the conversation."}]
-            st.session_state.collected_info = {
-                "name": None,
-                "email": None,
-                "phone": None,
-                "position": None,
-                "experience": None,
-                "location": None
-            }
-            st.session_state.conversation_started = False
-            st.session_state.test_confirmed = False
-            st.session_state.assessment_complete = False
-            st.session_state.final_percentage = 0
-            
-            if 'mcq_questions' in st.session_state:
-                del st.session_state.mcq_questions
-            if 'current_question_index' in st.session_state:
-                del st.session_state.current_question_index
-            if 'user_answers' in st.session_state:
-                del st.session_state.user_answers
-            if 'max_possible_score' in st.session_state:
-                del st.session_state.max_possible_score
-            
-            st.rerun()
 
     if st.session_state.assessment_complete and st.session_state.final_percentage >= 60:
         display_score_animation()
@@ -673,12 +653,15 @@ def main():
             custom_chat_message(message["role"], message["content"])
     
     if prompt := st.chat_input("Type your message here..."):
-        exit_keywords = ["exit", "quit", "goodbye", "bye", "stop", "end"]
+        exit_keywords = ["exit", "quit", "goodbye", "bye", "stop", "end", "done"]
         
         st.session_state.messages.append({"role": "user", "content": prompt})
         custom_chat_message("user", prompt)
         
-        if any(keyword in prompt.lower() for keyword in exit_keywords):
+        if st.session_state.assessment_complete and any(keyword in prompt.lower() for keyword in exit_keywords):
+            st.session_state.clear()
+            st.rerun()
+        elif any(keyword in prompt.lower() for keyword in exit_keywords):
             farewell = "Thank you for your time! A recruiter will review your information and get back to you shortly. Have a great day!"
             st.session_state.messages.append({"role": "assistant", "content": farewell})
             custom_chat_message("assistant", farewell)
