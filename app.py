@@ -695,7 +695,6 @@ def main():
             response = generate_response(prompt)
             st.session_state.messages.append({"role": "assistant", "content": response})
             custom_chat_message("assistant", response)
-        st.rerun()
 
 if __name__ == "__main__":
     if not os.getenv("OPENAI_API_KEY"):
