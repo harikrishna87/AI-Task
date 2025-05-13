@@ -612,7 +612,7 @@ def main():
         if st.session_state.test_confirmed and not st.session_state.assessment_complete:
             if hasattr(st.session_state, 'current_question_index') and hasattr(st.session_state, 'mcq_questions'):
                 progress = st.session_state.current_question_index / len(st.session_state.mcq_questions)
-                st.progress(progress, text=f"Question {st.session_state.current_question_index}/{len(st.session_state.mcq_questions)}")
+                st.progress(progress, text=f"Question {st.session_state.current_question_index + 1}/{len(st.session_state.mcq_questions)}")
         
         if st.session_state.assessment_complete and hasattr(st.session_state, 'final_percentage'):
             st.subheader(f"Final Score: {st.session_state.final_percentage}%")
@@ -642,7 +642,7 @@ def main():
                         q_index = answer_data['question_index']
                         question = st.session_state.mcq_questions[q_index]['question']
                         result = "✅ Correct" if answer_data['correct'] else "❌ Incorrect"
-                        st.write(f"**Q{q_index+1}:** {question[:40]}... - **Your answer:** {answer_data['user_answer']} - {result}")
+                        st.write(f"**Q{q_index + 1}:** {question[:40]}... - **Your answer:** {answer_data['user_answer']} - {result}")
 
     if st.session_state.assessment_complete and st.session_state.final_percentage >= 60:
         display_score_animation()
