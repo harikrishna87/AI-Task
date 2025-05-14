@@ -669,6 +669,16 @@ def main():
             response = generate_response(prompt)
             st.session_state.messages.append({"role": "assistant", "content": response})
             custom_chat_message("assistant", response)
+    
+    if st.session_state.assessment_complete and not any(msg["content"].startswith("Thank you for completing the assessment") or msg["content"].startswith("Congratulations") for msg in st.session_state.messages):
+        if st.session_state.final_percentage >= 60:
+            congrats_msg = f"Congratulations! You've completed the assessment with a score of {st.session_state.final_percentage}%. This is above our cutoff of 60%. A recruiter will contact you soon for the next steps. Thank you for your time! Pls type Exit to end the conversation."
+            st.session_state.messages.append({"role": "assistant", "content": congrats_msg})
+            custom_chat_message("assistant", congrats_msg)
+        else:
+            score_msg = f"Thank you for completing the assessment. Your score is {st.session_state.final_percentage}%. Our cutoff score is 60%. We appreciate your interest and time. Pls type Exit to end the conversation."
+            st.session_state.messages.append({"role": "assistant", "content": score_msg})
+            custom_chat_message("assistant", score_msg)
 
 if __name__ == "__main__":
     if not os.getenv("OPENAI_API_KEY"):
