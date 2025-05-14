@@ -280,14 +280,14 @@ def generate_response(user_input):
                     st.session_state.assessment_complete = True
                     
                     if percentage >= 60:
-                        return f"Congratulations! You've completed the assessment with a score of {st.session_state.final_percentage}%. This is above our cutoff of 60%. A recruiter will contact you soon for the next steps. Thank you for your time!"
+                        return f"Congratulations! You've completed the assessment with a score of {st.session_state.final_percentage}%. This is above our cutoff of 60%. A recruiter will contact you soon for the next steps. Thank you for your time! You can exit now by typing 'exit'."
                     else:
-                        return f"Thank you for completing the assessment. Your score is {st.session_state.final_percentage}%. Our cutoff score is 60%. We appreciate your interest and time."
+                        return f"Thank you for completing the assessment. Your score is {st.session_state.final_percentage}%. Our cutoff score is 60%. We appreciate your interest and time. You can exit now by typing 'exit'."
             else:
                 return "Please select a valid option (A, B, C, or D)."
         
         else:
-            return "Your assessment is already complete. A recruiter will contact you shortly."
+            return "Your assessment is already complete. A recruiter will contact you shortly. You can exit now by typing 'exit'."
 
 def set_custom_css():
     st.markdown("""
@@ -419,6 +419,31 @@ div.stButton > button:hover {
     margin-bottom: 20px;
 }
 
+.user-details {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border-left: 4px solid #4CAF50;
+}
+
+.user-details h3 {
+    color: #2c3e50;
+    margin-top: 0;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 8px;
+}
+
+.user-details p {
+    margin: 5px 0;
+    font-size: 0.95em;
+}
+
+.user-details strong {
+    color: #2c3e50;
+}
+
 @media (prefers-color-scheme: dark) {
     .assistant-message {
         background-color: #2a4d7c;
@@ -507,6 +532,20 @@ div.stButton > button:hover {
     .mcq-option {
         margin-top: 2px;
         margin-bottom: 2px;
+    }
+    
+    .user-details {
+        background-color: #2d3748;
+        border-left: 4px solid #4CAF50;
+    }
+    
+    .user-details h3 {
+        color: #ffffff;
+        border-bottom: 1px solid #4a5568;
+    }
+    
+    .user-details strong {
+        color: #ffffff;
     }
     
     @media (prefers-color-scheme: dark) {
@@ -602,12 +641,33 @@ def main():
         st.session_state.final_percentage = 0
     
     with st.sidebar:
-        st.header("Assessment Score")
+        if (st.session_state.collected_info["name"] or 
+            st.session_state.collected_info["email"] or 
+            st.session_state.collected_info["phone"] or 
+            st.session_state.collected_info["position"]):
+            
+            with st.container():
+                st.markdown("""
+                <div class="user-details">
+                    <h3>Candidate Information</h3>
+                """, unsafe_allow_html=True)
+                
+                if st.session_state.collected_info["name"]:
+                    st.markdown(f"<p><strong>Name:</strong> {st.session_state.collected_info['name']}</p>", unsafe_allow_html=True)
+                if st.session_state.collected_info["email"]:
+                    st.markdown(f"<p><strong>Email:</strong> {st.session_state.collected_info['email']}</p>", unsafe_allow_html=True)
+                if st.session_state.collected_info["phone"]:
+                    st.markdown(f"<p><strong>Phone:</strong> {st.session_state.collected_info['phone']}</p>", unsafe_allow_html=True)
+                if st.session_state.collected_info["experience"]:
+                    st.markdown(f"<p><strong>Experience:</strong> {st.session_state.collected_info['experience']} years</p>", unsafe_allow_html=True)
+                if st.session_state.collected_info["location"]:
+                    st.markdown(f"<p><strong>Location:</strong> {st.session_state.collected_info['location']}</p>", unsafe_allow_html=True)
+                if st.session_state.collected_info["position"]:
+                    st.markdown(f"<p><strong>Position:</strong> {st.session_state.collected_info['position']}</p>", unsafe_allow_html=True)
+                
+                st.markdown("</div>", unsafe_allow_html=True)
         
-        if st.session_state.collected_info["name"]:
-            st.write(f"**Candidate:** {st.session_state.collected_info['name']}")
-        if st.session_state.collected_info["position"]:
-            st.write(f"**Position:** {st.session_state.collected_info['position']}")
+        st.header("Assessment Score")
         
         if st.session_state.test_confirmed and not st.session_state.assessment_complete:
             if hasattr(st.session_state, 'current_question_index') and hasattr(st.session_state, 'mcq_questions'):
@@ -659,6 +719,9 @@ def main():
         custom_chat_message("user", prompt)
         
         if st.session_state.assessment_complete and any(keyword in prompt.lower() for keyword in exit_keywords):
+            farewell = "Thank you for using TalentScout! Your information has been saved. Goodbye!"
+            st.session_state.messages.append({"role": "assistant", "content": farewell})
+            custom_chat_message("assistant", farewell)
             st.session_state.clear()
             st.rerun()
         elif any(keyword in prompt.lower() for keyword in exit_keywords):
@@ -672,11 +735,11 @@ def main():
     
     if st.session_state.assessment_complete and not any(msg["content"].startswith("Thank you for completing the assessment") or msg["content"].startswith("Congratulations") for msg in st.session_state.messages):
         if st.session_state.final_percentage >= 60:
-            congrats_msg = f"Congratulations! You've completed the assessment with a score of {st.session_state.final_percentage}%. This is above our cutoff of 60%. A recruiter will contact you soon for the next steps. Thank you for your time! Pls type Exit to end the conversation."
+            congrats_msg = f"Congratulations! You've completed the assessment with a score of {st.session_state.final_percentage}%. This is above our cutoff of 60%. A recruiter will contact you soon for the next steps. Thank you for your time! You can exit now by typing 'exit'."
             st.session_state.messages.append({"role": "assistant", "content": congrats_msg})
             custom_chat_message("assistant", congrats_msg)
         else:
-            score_msg = f"Thank you for completing the assessment. Your score is {st.session_state.final_percentage}%. Our cutoff score is 60%. We appreciate your interest and time. Pls type Exit to end the conversation."
+            score_msg = f"Thank you for completing the assessment. Your score is {st.session_state.final_percentage}%. Our cutoff score is 60%. We appreciate your interest and time. You can exit now by typing 'exit'."
             st.session_state.messages.append({"role": "assistant", "content": score_msg})
             custom_chat_message("assistant", score_msg)
 
