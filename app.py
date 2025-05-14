@@ -41,16 +41,10 @@ def extract_phone(text):
     return None
 
 def extract_experience(text):
-    patterns = [
-        r'(\d+)\s*(?:years|year|yrs|yr)(?:\s*of\s*experience|\s*experience)?',
-        r'experience(?:\s*of)?\s*(\d+)\s*(?:years|year|yrs|yr)'
-    ]
-    
-    for pattern in patterns:
-        match = re.search(pattern, text.lower())
-        if match:
-            return match.group(1)
-    
+    pattern = r'\b(\d+)\b'
+    match = re.search(pattern, text)
+    if match:
+        return match.group(1)
     return None
 
 def extract_confirmation(text):
@@ -136,7 +130,7 @@ def generate_response(user_input):
         phone = extract_phone(user_input)
         if phone:
             st.session_state.collected_info["phone"] = phone
-            return "Great! How many years of professional experience do you have? (If you're a fresher, please say 'fresher' or '0')"
+            return "Great! How many years of professional experience do you have? (Please provide just the number)"
         else:
             return "I need your phone number to proceed. Please provide a valid phone number."
     
@@ -146,7 +140,7 @@ def generate_response(user_input):
             st.session_state.collected_info["experience"] = experience if experience else "0"
             return "Thanks! What is your current location?"
         else:
-            return "I need to know your years of experience. Please specify a number (e.g., '3 years' or 'fresher')."
+            return "I need to know your years of experience. Please specify just the number (e.g., '3' or '0' for fresher)."
     
     elif not st.session_state.collected_info["location"]:
         location = user_input.strip()
